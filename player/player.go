@@ -15,42 +15,49 @@ var ErrNoSkip = errors.New("no song to skip to")
 
 type Song struct {
 	stream  io.Reader
-	snippet *ytdl.Video
+	Snippet *ytdl.Video
 	stopped bool
 }
 
 type Player struct {
-	connected, playing bool
-	connection         voice.Conn
-	guildId, channelId snowflake.ID
+	connected, playing                        bool
+	connection                                voice.Conn
+	guildId, channelId, announcementChannelId snowflake.ID
 
 	provider *ffmpeg.AudioProvider
 
-	queue []*Song
+	queue      []*Song
+	NowPlaying chan Song
 }
 
 func NewSong(stream io.Reader, snippet *ytdl.Video) *Song {
-	return &Song{stream: stream, snippet: snippet}
+	return &Song{stream: stream, Snippet: snippet}
 }
 
-var channels = make(map[snowflake.ID]*Player)
+var players = make(map[snowflake.ID]*Player)
 
 func GetPlayer(guildId snowflake.ID, mgr voice.Manager) *Player {
-	if p, ok := channels[guildId]; ok {
+	if p, ok := players[guildId]; ok {
 		return p
 	}
 	conn := mgr.CreateConn(guildId)
-	p := &Player{connection: conn, guildId: guildId}
-	channels[guildId] = p
+	p := &Player{connection: conn, guildId: guildId, NowPlaying: make(chan Song, 1)}
+	players[guildId] = p
 	return p
 }
 
-func (p *Player) Connect(channelId snowflake.ID) error {
+func HasPlayer(guildId snowflake.ID) bool {
+	_, ok := players[guildId]
+	return ok
+}
+
+func (p *Player) Connect(channelId, announcementChannelId snowflake.ID) error {
 	if p.connected {
 		return nil
 	}
 	p.connected = true
 	p.channelId = channelId
+	p.announcementChannelId = announcementChannelId
 	return p.connection.Open(context.TODO(), channelId, false, true)
 }
 
@@ -66,7 +73,11 @@ func (p *Player) Resume() {
 	p.provider.Paused = false
 }
 
-func (p *Player) IsPaused() bool {
+func (p *Player) AnnouncementChannel() snowflake.ID {
+	return p.announcementChannelId
+}
+
+func (p *Player) Paused() bool {
 	return p.provider.Paused
 }
 
@@ -100,8 +111,8 @@ func (p *Player) Skip() error {
 	return p.play(p.queue[0])
 }
 
-func (p *Player) QueueLen() int {
-	return len(p.queue)
+func (p *Player) Queue() []*Song {
+	return p.queue
 }
 
 func (p *Player) play(song *Song) error {
@@ -110,6 +121,7 @@ func (p *Player) play(song *Song) error {
 		return err
 	}
 
+	p.NowPlaying <- *song
 	p.connection.SetOpusFrameProvider(f)
 	p.provider = f
 	p.playing = true
@@ -146,5 +158,7 @@ func (p *Player) Play(song *Song) error {
 func (p *Player) Kill() {
 	p.connection.Close(context.TODO())
 	p.connected = false
-	delete(channels, p.guildId)
+	p.playing = false
+	delete(players, p.guildId)
+	close(p.NowPlaying)
 }

@@ -26,7 +26,7 @@ var skip = Command{
 			return
 		}
 
-		if player.QueueLen() < 2 {
+		if len(player.Queue()) < 2 {
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("There is no song to skip to")})
 			return
 		}

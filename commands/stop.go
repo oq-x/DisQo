@@ -11,13 +11,17 @@ var stop = Command{
 	Description: "Stop the music",
 	Callback: func(interaction *events.InteractionCreate) {
 		_ = deferReply(interaction)
-		if interaction.Member() == nil {
+		if interaction.GuildID() == nil {
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("This command must be ran in a server.")})
 			return
 		}
 		channelId := getMemberVoiceChannelId(interaction)
 		if channelId == nil {
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("You must be in a voice channel.")})
+			return
+		}
+		if !player.HasPlayer(*interaction.GuildID()) {
+			_ = editReply(interaction, discord.MessageUpdate{Content: point("Nothing is playing.")})
 			return
 		}
 		player := player.GetPlayer(*interaction.GuildID(), interaction.Client().VoiceManager())

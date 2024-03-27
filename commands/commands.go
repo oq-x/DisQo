@@ -13,7 +13,7 @@ type Command struct {
 }
 
 var commands = []Command{
-	play, stop, skip, pause, resume,
+	play, stop, skip, pause, resume, queue,
 }
 
 func data(i *events.InteractionCreate) discord.SlashCommandInteractionData {

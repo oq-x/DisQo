@@ -25,7 +25,7 @@ var pause = Command{
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("You are not in the same voice channel as me")})
 			return
 		}
-		if player.IsPaused() {
+		if player.Paused() {
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("The song is already paused")})
 			return
 		}
