@@ -9,12 +9,9 @@ import (
 	"google.golang.org/api/youtube/v3"
 	"io"
 	"net/url"
-	"strconv"
 	"strings"
-	"time"
 )
 
-var ErrNoVideo = errors.New("failed to find video")
 var ErrAudioStream = errors.New("failed to find audio stream")
 
 var client ytdl.Client
@@ -31,16 +28,7 @@ func SearchVideos(query string) (*youtube.SearchListResponse, error) {
 	return res, err
 }
 
-func GetVideo(id string) (*youtube.Video, io.Reader, error) {
-	call := service.Videos.List([]string{"snippet", "contentDetails"}).Id(id)
-	res, err := call.Do()
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(res.Items) == 0 {
-		return nil, nil, ErrNoVideo
-	}
-
+func GetVideo(id string) (*ytdl.Video, io.Reader, error) {
 	video, err := client.GetVideo(id)
 	if err != nil {
 		return nil, nil, err
@@ -53,7 +41,7 @@ func GetVideo(id string) (*youtube.Video, io.Reader, error) {
 	}
 	stream, _, _ := client.GetStream(video, format)
 
-	return res.Items[0], stream, nil
+	return video, stream, nil
 }
 
 func findOpusFormat(formats ytdl.FormatList) (*ytdl.Format, error) {
@@ -79,7 +67,7 @@ func GetVideoIDFromURL(query string) (string, error) {
 	return "", fmt.Errorf("no can do")
 }
 
-func ParseVideoDuration(s string) (time.Duration, error) {
+/*func ParseVideoDuration(s string) (time.Duration, error) {
 	s = strings.TrimPrefix(s, "PT")
 	var (
 		hour, minute, second int
@@ -106,3 +94,4 @@ func ParseVideoDuration(s string) (time.Duration, error) {
 	}
 	return time.Duration((hour * 3600000000000) + (minute * 60000000000) + (second * 1000000000)), nil
 }
+*/

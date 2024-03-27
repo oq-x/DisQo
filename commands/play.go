@@ -36,7 +36,6 @@ var play = Command{
 		}
 
 		vid, stream, _ := youtube.GetVideo(id)
-		duration, _ := youtube.ParseVideoDuration(vid.ContentDetails.Duration)
 		if vid == nil {
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("No video found.")})
 			return
@@ -51,7 +50,7 @@ var play = Command{
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("You must be in a voice channel.")})
 			return
 		}
-		song := player.NewSong(stream, vid.Snippet)
+		song := player.NewSong(stream, vid)
 		player := player.GetPlayer(*interaction.GuildID(), interaction.Client().VoiceManager())
 		if !player.Connected() {
 			go func() {
@@ -64,11 +63,11 @@ var play = Command{
 					return
 				} else {
 					embed := discord.NewEmbedBuilder().
-						SetTitlef("Now playing: %s", vid.Snippet.Title).
-						SetURLf("https://youtu.be/%s", vid.Id).
-						SetThumbnail(vid.Snippet.Thumbnails.Default.Url).
-						SetDescriptionf("Duration: %s", duration.String()).
-						SetAuthorName(vid.Snippet.ChannelTitle).Build()
+						SetTitlef("Now playing: %s", vid.Title).
+						SetURLf("https://youtu.be/%s", vid.ID).
+						SetThumbnail(vid.Thumbnails[0].URL).
+						SetDescriptionf("Duration: %s", vid.Duration.String()).
+						SetAuthorName(vid.Author).Build()
 					_ = editReply(interaction, discord.MessageUpdate{Embeds: &[]discord.Embed{embed}})
 				}
 			}()
@@ -76,11 +75,11 @@ var play = Command{
 			if player.Playing() {
 				player.AddToQueue(song)
 				embed := discord.NewEmbedBuilder().
-					SetTitlef("Added to queue: %s", vid.Snippet.Title).
-					SetURLf("https://youtu.be/%s", vid.Id).
-					SetThumbnail(vid.Snippet.Thumbnails.Default.Url).
-					SetDescriptionf("Duration: %s", duration.String()).
-					SetAuthorName(vid.Snippet.ChannelTitle).Build()
+					SetTitlef("Added to queue: %s", vid.Title).
+					SetURLf("https://youtu.be/%s", vid.ID).
+					SetThumbnail(vid.Thumbnails[0].URL).
+					SetDescriptionf("Duration: %s", vid.Duration.String()).
+					SetAuthorName(vid.Author).Build()
 				_ = editReply(interaction, discord.MessageUpdate{Embeds: &[]discord.Embed{embed}})
 			} else {
 				if err := player.Play(song); err != nil {
@@ -89,11 +88,11 @@ var play = Command{
 					return
 				} else {
 					embed := discord.NewEmbedBuilder().
-						SetTitlef("Now playing: %s", vid.Snippet.Title).
-						SetURLf("https://youtu.be/%s", vid.Id).
-						SetThumbnail(vid.Snippet.Thumbnails.Default.Url).
-						SetDescriptionf("Duration: %s", duration.String()).
-						SetAuthorName(vid.Snippet.ChannelTitle).Build()
+						SetTitlef("Now playing: %s", vid.Title).
+						SetURLf("https://youtu.be/%s", vid.ID).
+						SetThumbnail(vid.Thumbnails[0].URL).
+						SetDescriptionf("Duration: %s", vid.Duration.String()).
+						SetAuthorName(vid.Author).Build()
 					_ = editReply(interaction, discord.MessageUpdate{Embeds: &[]discord.Embed{embed}})
 				}
 			}

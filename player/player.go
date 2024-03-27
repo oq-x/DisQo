@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/disgoorg/disgo/voice"
-	"github.com/disgoorg/ffmpeg-audio"
 	"github.com/disgoorg/snowflake/v2"
-	"google.golang.org/api/youtube/v3"
+	ytdl "github.com/kkdai/youtube/v2"
+	"github.com/oq-x/ffmpeg-audio"
 	"io"
 )
 
@@ -15,7 +15,7 @@ var ErrNoSkip = errors.New("no song to skip to")
 
 type Song struct {
 	stream  io.Reader
-	snippet *youtube.VideoSnippet
+	snippet *ytdl.Video
 	stopped bool
 }
 
@@ -24,12 +24,12 @@ type Player struct {
 	connection         voice.Conn
 	guildId, channelId snowflake.ID
 
-	provider voice.OpusFrameProvider
+	provider *ffmpeg.AudioProvider
 
 	queue []*Song
 }
 
-func NewSong(stream io.Reader, snippet *youtube.VideoSnippet) *Song {
+func NewSong(stream io.Reader, snippet *ytdl.Video) *Song {
 	return &Song{stream: stream, snippet: snippet}
 }
 
@@ -56,6 +56,18 @@ func (p *Player) Connect(channelId snowflake.ID) error {
 
 func (p *Player) AddToQueue(s *Song) {
 	p.queue = append(p.queue, s)
+}
+
+func (p *Player) Pause() {
+	p.provider.Paused = true
+}
+
+func (p *Player) Resume() {
+	p.provider.Paused = false
+}
+
+func (p *Player) IsPaused() bool {
+	return p.provider.Paused
 }
 
 func (p *Player) Playing() bool {

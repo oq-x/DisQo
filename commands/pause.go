@@ -6,9 +6,9 @@ import (
 	"github.com/disgoorg/disgo/events"
 )
 
-var skip = Command{
-	Name:        "skip",
-	Description: "Skip to the next song",
+var pause = Command{
+	Name:        "pause",
+	Description: "Pause the current song",
 	Callback: func(interaction *events.InteractionCreate) {
 		_ = deferReply(interaction)
 		if interaction.Member() == nil {
@@ -25,14 +25,11 @@ var skip = Command{
 			_ = editReply(interaction, discord.MessageUpdate{Content: point("You are not in the same voice channel as me")})
 			return
 		}
-
-		if player.QueueLen() < 2 {
-			_ = editReply(interaction, discord.MessageUpdate{Content: point("There is no song to skip to")})
+		if player.IsPaused() {
+			_ = editReply(interaction, discord.MessageUpdate{Content: point("The song is already paused")})
 			return
 		}
-		go func() {
-			_ = player.Skip()
-			_ = editReply(interaction, discord.MessageUpdate{Content: point("⏩ Successfully skipped to the next song.")})
-		}()
+		player.Pause()
+		_ = editReply(interaction, discord.MessageUpdate{Content: point("The song has been paused")})
 	},
 }
